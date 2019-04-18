@@ -1,0 +1,2 @@
+cd rpg_toolkit_api
+gunicorn rpg_toolkit_api.wsgi --log-file -
