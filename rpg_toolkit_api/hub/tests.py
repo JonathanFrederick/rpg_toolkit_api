@@ -1,9 +1,11 @@
-from django.test import TestCase, LiveServerTestCase
-from django.contrib.auth.models import User
-
 import requests
 import json
 import re
+
+from django.test import TestCase, LiveServerTestCase
+from django.contrib.auth.models import User
+
+from rest_framework.authtoken.models import Token
 
 
 # Create your tests here.
@@ -38,3 +40,18 @@ class FunctionalTests_Users(LiveServerTestCase):
         resp = json.loads(response.text)
         assert 'token' in resp.keys()
         assert re.match(r'^[0-9a-f]*$', resp['token'])
+        assert Token.objects.all()
+
+    def test_logout(self):
+        user = User.objects.create_user(self.body['username'],
+                                        self.body['email'],
+                                        self.body['password'],)
+
+        token, created = Token.objects.get_or_create(user=user)
+
+        response = requests.post(self.live_server_url + '/hub/logout/',
+                                 headers={'Authorization':
+                                          'Token {}'.format(token)})
+
+        assert response.status_code == 200
+        assert not Token.objects.all()
