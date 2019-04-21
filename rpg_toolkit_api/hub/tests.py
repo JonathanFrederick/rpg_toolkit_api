@@ -28,6 +28,17 @@ class FunctionalTests_Users(LiveServerTestCase):
                                  data=json.dumps(self.body))
         assert response.status_code == 201
 
+    def test_bad_user_creation(self):
+        response = requests.post(self.live_server_url + '/hub/user/',
+                                 data=json.dumps({'username': None,
+                                                  'password': 'abcdefgh'}))
+        assert response.status_code == 400
+
+        response = requests.post(self.live_server_url + '/hub/user/',
+                                 data=json.dumps({'username': 'abcdefgh',
+                                                  'password': None}))
+        assert response.status_code == 400
+
     def test_login(self):
         User.objects.create_user(self.body['username'],
                                  self.body['email'],
@@ -55,3 +66,17 @@ class FunctionalTests_Users(LiveServerTestCase):
 
         assert response.status_code == 200
         assert not Token.objects.all()
+
+    def test_bad_logout(self):
+        user = User.objects.create_user(self.body['username'],
+                                        self.body['email'],
+                                        self.body['password'],)
+
+        token, created = Token.objects.get_or_create(user=user)
+
+        response = requests.post(self.live_server_url + '/hub/logout/',
+                                 headers={'Authorization':
+                                          'Token 123ghi'})
+
+        assert response.status_code == 401
+        assert Token.objects.all()
